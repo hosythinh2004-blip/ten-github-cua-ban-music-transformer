@@ -7,6 +7,7 @@ on:
     paths:
       - "app.py"
       - "app_v13.py"
+      - "app_v14.py"
       - "requirements.txt"
       - ".github/workflows/build-windows.yml"
 
@@ -35,7 +36,7 @@ jobs:
 
       - name: Validate Python source
         shell: pwsh
-        run: python -m py_compile app_v13.py
+        run: python -m py_compile app_v14.py
 
       - name: Build EXE
         shell: pwsh
@@ -43,7 +44,7 @@ jobs:
           pyinstaller --noconfirm --clean --onefile --windowed `
             --name SunoAudioConverter `
             --collect-all imageio_ffmpeg `
-            app_v13.py
+            app_v14.py
 
       - name: Upload Windows app
         uses: actions/upload-artifact@v4
