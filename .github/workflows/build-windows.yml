@@ -5,8 +5,9 @@ on:
   push:
     branches: [main]
     paths:
-      - "app_v4.py"
-      - "api_server.py"
+      - "app_v5.py"
+      - "api_server_v5.py"
+      - "suno_engine_v5.py"
       - "requirements.txt"
       - ".github/workflows/build-windows.yml"
 
@@ -36,8 +37,9 @@ jobs:
       - name: Validate Python source
         shell: pwsh
         run: |
-          python -m py_compile api_server.py
-          python -m py_compile app_v4.py
+          python -m py_compile suno_engine_v5.py
+          python -m py_compile api_server_v5.py
+          python -m py_compile app_v5.py
 
       - name: Build EXE
         shell: pwsh
@@ -48,13 +50,14 @@ jobs:
             --collect-all fastapi `
             --collect-all starlette `
             --collect-all uvicorn `
-            --hidden-import api_server `
-            app_v4.py
+            --hidden-import suno_engine_v5 `
+            --hidden-import api_server_v5 `
+            app_v5.py
 
       - name: Upload Windows app
         uses: actions/upload-artifact@v4
         with:
-          name: SunoAudioConverter-Windows-v4
+          name: SunoAudioConverter-Windows-v5
           path: dist/SunoAudioConverter.exe
           if-no-files-found: error
           retention-days: 30
