@@ -5,7 +5,7 @@ on:
   push:
     branches: [main]
     paths:
-      - "app_link.py"
+      - "app_v3.py"
       - "requirements.txt"
       - ".github/workflows/build-windows.yml"
 
@@ -34,20 +34,20 @@ jobs:
 
       - name: Validate Python source
         shell: pwsh
-        run: python -m py_compile app_link.py
+        run: python -m py_compile app_v3.py
 
       - name: Build EXE
         shell: pwsh
         run: |
           pyinstaller --noconfirm --clean --onefile --windowed `
-            --name SunoLinkAudioEncoder `
+            --name SunoAudioConverter `
             --collect-all imageio_ffmpeg `
-            app_link.py
+            app_v3.py
 
       - name: Upload Windows app
         uses: actions/upload-artifact@v4
         with:
-          name: SunoLinkAudioEncoder-Windows
-          path: dist/SunoLinkAudioEncoder.exe
+          name: SunoAudioConverter-Windows
+          path: dist/SunoAudioConverter.exe
           if-no-files-found: error
           retention-days: 30
