@@ -1,6 +1,6 @@
 # Suno Audio Converter v3
 
-Ứng dụng Windows nhận **link bài hát Suno**, đọc metadata công khai, tìm **file audio trực tiếp công khai** nếu trang có cung cấp, sau đó chuyển đổi bằng FFmpeg sang **MP3 / WAV / M4A**.
+Ứng dụng Windows + API nội bộ nhận **link bài hát Suno**, đọc metadata công khai, tìm **file audio trực tiếp công khai** nếu trang có cung cấp, sau đó chuyển đổi bằng FFmpeg sang **MP3 / WAV / M4A**.
 
 ## Quy trình
 1. **URL Resolution**
@@ -12,13 +12,13 @@
 2. **Kiểm tra nguồn audio**
    - Tải thử từng nguồn audio trực tiếp.
    - Kiểm tra bằng FFmpeg để chắc chắn đó là file audio hoàn chỉnh, không phải HTML/JSON/placeholder/segment lỗi.
-   - **Không gọi endpoint quyền/DRM, không lấy khóa mã hóa, không giải mã luồng được bảo vệ.**
+   - **Không gọi endpoint quyền/DRM, không lấy khóa mã hóa, không tự sinh guest token và không giải mã luồng được bảo vệ.**
 
 3. **Transcoding**
    - MP3 320 kbps CBR (`libmp3lame`).
    - WAV PCM 16-bit / 44.1 kHz.
    - M4A AAC 256 kbps + `faststart`.
-   - Tùy chọn normalize âm lượng, mono và cắt đoạn theo thời gian.
+   - Tùy chọn normalize âm lượng, mono và cắt đoạn theo thời gian ở ứng dụng desktop.
    - Sau khi tạo, giải mã kiểm tra lại toàn bộ file đầu ra bằng FFmpeg.
 
 4. **Batch / Cache / ZIP**
@@ -28,15 +28,51 @@
    - Có thể lưu cover art.
    - Đóng gói tất cả file hoàn tất thành một file ZIP.
 
+## API nội bộ
+Chạy server:
+
+```bash
+pip install -r requirements.txt
+uvicorn api_server:app --host 127.0.0.1 --port 8000
+```
+
+### Lấy metadata
+
+```http
+GET /api/suno-info?url=https://suno.com/song/<UUID>
+```
+
+Ví dụ:
+
+```bash
+curl "http://127.0.0.1:8000/api/suno-info?url=https://suno.com/song/5e0db2d1-38ca-4c19-9587-c7cc87750e0e"
+```
+
+### Chuyển nguồn audio công khai
+
+```http
+GET /api/proxy-audio?id=<UUID>&format=mp3
+GET /api/proxy-audio?id=<UUID>&format=wav
+GET /api/proxy-audio?id=<UUID>&format=m4a
+```
+
+Ví dụ:
+
+```bash
+curl -L -o baihat.mp3 "http://127.0.0.1:8000/api/proxy-audio?id=5e0db2d1-38ca-4c19-9587-c7cc87750e0e&format=mp3"
+```
+
+Endpoint này chỉ hoạt động khi trang Suno công khai một **file audio hoàn chỉnh** mà server được phép tải. Nếu chỉ có playback segment, nguồn bị khóa, hoặc URL yêu cầu quyền truy cập, API sẽ trả lỗi rõ ràng thay vì cố vượt cơ chế bảo vệ.
+
 ## Phạm vi hỗ trợ
 Công cụ chỉ xử lý **nguồn audio trực tiếp công khai** mà trang Suno cung cấp và máy người dùng được phép truy cập. Nếu bài chỉ cung cấp playback segment hoặc luồng được bảo vệ, ứng dụng sẽ báo `Không có audio public` thay vì cố giải mã hoặc vượt cơ chế truy cập.
 
-## Chạy bằng Python
+## Chạy ứng dụng Windows bằng Python
 Yêu cầu Python 3.12 trên Windows.
 
 ```bash
 pip install -r requirements.txt
-python app_v3.py
+python app_v31.py
 ```
 
 ## Build EXE
