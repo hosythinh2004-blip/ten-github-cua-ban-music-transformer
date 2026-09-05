@@ -12,7 +12,7 @@ import imageio_ffmpeg
 import requests
 
 APP_NAME = "Suno Audio Converter"
-APP_VERSION = "1.1.0"
+APP_VERSION = "1.2.0"
 UA = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
     "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150 Safari/537.36"
@@ -30,8 +30,7 @@ def safe_name(value: str) -> str:
 
 
 def guess_name_from_url(url: str) -> str:
-    stem = Path(urlparse(url).path).stem or "audio"
-    return safe_name(stem)
+    return safe_name(Path(urlparse(url).path).stem or "audio")
 
 
 def source_kind(url: str) -> str:
@@ -42,12 +41,12 @@ def source_kind(url: str) -> str:
         return "MP3"
     if path.endswith(".wav"):
         return "WAV"
+    if path.endswith(".aac"):
+        return "AAC"
     return "audio"
 
 
 class Resolver:
-    """Resolve Suno links to public audio candidates."""
-
     def __init__(self):
         self.session = requests.Session()
         self.session.headers.update(
@@ -71,10 +70,8 @@ class Resolver:
 
         if suffix in AUDIO_EXTS:
             return [url], guess_name_from_url(url)
-
         if host in {"suno.com", "www.suno.com"}:
             return self._resolve_suno(url)
-
         return self._resolve_audio_from_page(url)
 
     def _resolve_suno(self, url: str):
@@ -102,8 +99,7 @@ class Resolver:
 
         if not clip_id:
             raise RuntimeError(
-                "Không lấy được ID bài hát từ link rút gọn Suno. "
-                "Hãy mở link trong trình duyệt rồi thử lại hoặc dùng link /song/..."
+                "Không lấy được ID bài hát từ link Suno. Hãy mở link trên trình duyệt và thử lại."
             )
 
         candidates = []
@@ -132,8 +128,7 @@ class Resolver:
 
                 media_urls = data.get("media_urls") or data.get("mediaUrls") or []
                 if isinstance(media_urls, list):
-                    m4a = []
-                    other = []
+                    m4a, other = [], []
                     for item in media_urls:
                         if not isinstance(item, dict):
                             continue
@@ -148,12 +143,7 @@ class Resolver:
                     candidates.extend(m4a)
                     candidates.extend(other)
 
-                for key in (
-                    "audio_url",
-                    "audioUrl",
-                    "stream_audio_url",
-                    "streamAudioUrl",
-                ):
+                for key in ("audio_url", "audioUrl", "stream_audio_url", "streamAudioUrl"):
                     value = data.get(key)
                     if self._is_usable_audio_url(value):
                         candidates.append(value)
@@ -164,33 +154,31 @@ class Resolver:
             candidates.extend(self._extract_audio_urls_from_html(page_html))
 
         canonical_url = f"https://suno.com/song/{clip_id}"
-        if final_url != canonical_url:
-            try:
-                r = self.session.get(
-                    canonical_url,
-                    timeout=15,
-                    allow_redirects=True,
-                    headers={"Accept": "text/html,application/xhtml+xml"},
-                )
-                if r.ok:
-                    page_title = self._extract_title_from_html(r.text)
-                    if page_title:
-                        title = safe_name(page_title)
-                    candidates.extend(self._extract_audio_urls_from_html(r.text))
-            except requests.RequestException:
-                pass
+        try:
+            r = self.session.get(
+                canonical_url,
+                timeout=15,
+                allow_redirects=True,
+                headers={"Accept": "text/html,application/xhtml+xml"},
+            )
+            if r.ok:
+                page_title = self._extract_title_from_html(r.text)
+                if page_title:
+                    title = safe_name(page_title)
+                candidates.extend(self._extract_audio_urls_from_html(r.text))
+        except requests.RequestException:
+            pass
 
+        # Public playback CDN fallback. It is only used if earlier candidates fail validation.
         candidates.append(f"https://cdn1.suno.ai/{clip_id}.mp3")
         candidates = self._dedupe([u for u in candidates if self._is_usable_audio_url(u)])
         if not candidates:
             raise RuntimeError("Không tìm thấy nguồn audio công khai cho bài Suno này.")
-
         return candidates, title
 
     def _resolve_short_link(self, url: str):
-        seen_text = [url]
+        seen = [url]
         final_url = url
-
         for method in ("head", "get"):
             try:
                 if method == "head":
@@ -204,20 +192,18 @@ class Resolver:
                         headers={"Accept": "text/html,application/xhtml+xml"},
                     )
                 final_url = r.url
-                chain = list(r.history) + [r]
-                for response in chain:
-                    seen_text.append(response.url or "")
-                    seen_text.append(response.headers.get("Location") or "")
+                for response in list(r.history) + [r]:
+                    seen.append(response.url or "")
+                    seen.append(response.headers.get("Location") or "")
                     if getattr(response, "request", None) is not None:
-                        seen_text.append(response.request.url or "")
+                        seen.append(response.request.url or "")
                 r.close()
-                for text in seen_text:
+                for text in seen:
                     clip_id = self._extract_uuid(text)
                     if clip_id:
                         return clip_id, final_url
             except requests.RequestException:
                 continue
-
         return None, final_url
 
     def _resolve_audio_from_page(self, url: str):
@@ -309,8 +295,7 @@ class Resolver:
 
     @staticmethod
     def _dedupe(values):
-        out = []
-        seen = set()
+        out, seen = [], set()
         for value in values:
             key = value.strip()
             if key and key not in seen:
@@ -347,11 +332,10 @@ class ConverterApp(tk.Tk):
 
         root = ttk.Frame(self, padding=20)
         root.pack(fill="both", expand=True)
-
         ttk.Label(root, text="SUNO AUDIO CONVERTER", style="Title.TLabel").pack(anchor="w")
         ttk.Label(
             root,
-            text=f"v{APP_VERSION} • Link Suno → ưu tiên nguồn M4A nếu có → MP3 hoặc WAV",
+            text=f"v{APP_VERSION} • nguồn lỗi sẽ tự bỏ qua → thử nguồn tiếp theo → MP3 hoặc WAV",
             style="Hint.TLabel",
         ).pack(anchor="w", pady=(3, 16))
 
@@ -393,10 +377,8 @@ class ConverterApp(tk.Tk):
 
         self.start_btn = ttk.Button(root, text="BẮT ĐẦU CHUYỂN ĐỔI", command=self.start)
         self.start_btn.pack(fill="x", pady=(0, 12))
-
         self.progress = ttk.Progressbar(root, mode="determinate", maximum=100)
         self.progress.pack(fill="x", pady=(0, 12))
-
         ttk.Label(root, text="Nhật ký").pack(anchor="w")
         self.log_box = tk.Text(
             root,
@@ -422,7 +404,6 @@ class ConverterApp(tk.Tk):
             self.log_box.insert("end", text + "\n")
             self.log_box.see("end")
             self.log_box.config(state="disabled")
-
         self.after(0, _append)
 
     def set_progress(self, value: float):
@@ -443,12 +424,13 @@ class ConverterApp(tk.Tk):
             messagebox.showerror(APP_NAME, f"Không tạo được thư mục lưu:\n{exc}")
             return
 
+        fmt = self.output_format.get()
         self.is_running = True
         self.start_btn.config(state="disabled")
         self.progress.configure(value=0)
-        threading.Thread(target=self._worker, args=(urls, out_dir), daemon=True).start()
+        threading.Thread(target=self._worker, args=(urls, out_dir, fmt), daemon=True).start()
 
-    def _worker(self, urls, out_dir: Path):
+    def _worker(self, urls, out_dir: Path, fmt: str):
         ok_count = 0
         try:
             ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
@@ -460,34 +442,55 @@ class ConverterApp(tk.Tk):
                 self.log(f"[{index}/{total}] Đang xử lý: {url}")
                 try:
                     candidates, title = self.resolver.resolve(url)
-                    self.log(f"  ✓ Tìm thấy {len(candidates)} nguồn audio, thử theo thứ tự ưu tiên")
+                    self.log(f"  ✓ Tìm thấy {len(candidates)} nguồn audio, sẽ xác minh từng nguồn bằng FFmpeg")
+                    output = self._unique_output(out_dir, title, fmt)
+                    converted = False
+                    last_error = None
 
                     with tempfile.TemporaryDirectory(prefix="suno_converter_") as tmp:
                         source = Path(tmp) / "source_audio"
-                        selected = None
-                        last_error = None
 
                         for source_index, audio_url in enumerate(candidates, 1):
+                            kind = source_kind(audio_url)
                             try:
                                 if source.exists():
                                     source.unlink()
-                                self.log(f"    • Nguồn {source_index}: {source_kind(audio_url)}")
-                                self._download(audio_url, source)
-                                selected = audio_url
+                                if output.exists():
+                                    output.unlink()
+
+                                self.log(f"    • Nguồn {source_index}/{len(candidates)}: {kind}")
+                                info = self._download(audio_url, source)
+                                self.log(
+                                    f"      ↳ Đã tải {info['size_mb']:.2f} MB, "
+                                    f"Content-Type: {info['content_type'] or 'không rõ'}"
+                                )
+
+                                # Quan trọng: tải được chưa có nghĩa là audio hợp lệ.
+                                # Chỉ coi nguồn thành công nếu FFmpeg đọc và tạo output được.
+                                self._convert(ffmpeg, source, output, fmt)
+                                if not output.exists() or output.stat().st_size < 4096:
+                                    raise RuntimeError("FFmpeg không tạo được file đầu ra hợp lệ")
+
+                                self.log(f"      ✓ FFmpeg xác nhận nguồn {kind} hợp lệ")
+                                converted = True
                                 break
                             except Exception as exc:
                                 last_error = exc
-                                self.log(f"      ↳ Không dùng được, thử nguồn dự phòng: {exc}")
+                                if output.exists():
+                                    try:
+                                        output.unlink()
+                                    except OSError:
+                                        pass
+                                short_error = str(exc).replace("\n", " ")
+                                if len(short_error) > 350:
+                                    short_error = short_error[-350:]
+                                self.log(f"      ↳ Nguồn lỗi, tự thử nguồn tiếp theo: {short_error}")
 
-                        if not selected:
-                            raise RuntimeError(f"Tất cả nguồn audio đều thất bại. Lỗi cuối: {last_error}")
+                    if not converted:
+                        raise RuntimeError(f"Tất cả {len(candidates)} nguồn đều không hợp lệ. Lỗi cuối: {last_error}")
 
-                        self.log(f"  ✓ Đã lấy nguồn {source_kind(selected)}")
-                        fmt = self.output_format.get()
-                        output = self._unique_output(out_dir, title, fmt)
-                        self._convert(ffmpeg, source, output, fmt)
-                        self.log(f"  ✓ Đã lưu: {output}")
-                        ok_count += 1
+                    self.log(f"  ✓ Đã lưu: {output}")
+                    ok_count += 1
                 except Exception as exc:
                     self.log(f"  ✗ Lỗi: {exc}")
 
@@ -505,6 +508,8 @@ class ConverterApp(tk.Tk):
             "Referer": "https://suno.com/",
             "Accept": "audio/*,video/mp4,application/octet-stream;q=0.9,*/*;q=0.8",
         }
+        content_type = ""
+        final_url = url
         with self.resolver.session.get(
             url,
             headers=headers,
@@ -512,12 +517,13 @@ class ConverterApp(tk.Tk):
             timeout=(20, 120),
             allow_redirects=True,
         ) as r:
-            if "/api/forbidden" in (r.url or "").lower():
-                raise RuntimeError("Suno chuyển nguồn này sang /api/forbidden")
+            final_url = r.url or url
+            if "/api/forbidden" in final_url.lower():
+                raise RuntimeError("Suno chuyển nguồn sang /api/forbidden")
             r.raise_for_status()
             content_type = (r.headers.get("Content-Type") or "").lower()
-            if "text/html" in content_type or "application/json" in content_type:
-                raise RuntimeError(f"Nguồn trả về {content_type or 'dữ liệu không phải audio'}")
+            if any(x in content_type for x in ("text/html", "application/json", "text/plain")):
+                raise RuntimeError(f"Nguồn trả về {content_type}, không phải file audio")
 
             with open(dest, "wb") as f:
                 for chunk in r.iter_content(chunk_size=1024 * 1024):
@@ -525,44 +531,29 @@ class ConverterApp(tk.Tk):
                         f.write(chunk)
 
         if not dest.exists() or dest.stat().st_size < 4096:
-            raise RuntimeError("File audio tải về rỗng hoặc quá nhỏ.")
+            raise RuntimeError("File tải về rỗng hoặc quá nhỏ")
+
+        # Bắt các response giả M4A/MP4 trước khi đưa vào FFmpeg.
+        kind = source_kind(final_url)
+        if kind == "M4A":
+            with open(dest, "rb") as f:
+                header = f.read(32)
+            if len(header) < 12 or header[4:8] != b"ftyp":
+                raise RuntimeError("URL ghi M4A nhưng dữ liệu tải về không có cấu trúc M4A/MP4 hợp lệ")
+
+        return {
+            "content_type": content_type,
+            "size_mb": dest.stat().st_size / (1024 * 1024),
+            "final_url": final_url,
+        }
 
     @staticmethod
     def _convert(ffmpeg: str, source: Path, output: Path, fmt: str):
+        common = [ffmpeg, "-y", "-hide_banner", "-loglevel", "error", "-i", str(source), "-vn"]
         if fmt == "mp3":
-            cmd = [
-                ffmpeg,
-                "-y",
-                "-hide_banner",
-                "-loglevel",
-                "error",
-                "-i",
-                str(source),
-                "-vn",
-                "-codec:a",
-                "libmp3lame",
-                "-b:a",
-                "320k",
-                str(output),
-            ]
+            cmd = common + ["-codec:a", "libmp3lame", "-b:a", "320k", str(output)]
         else:
-            cmd = [
-                ffmpeg,
-                "-y",
-                "-hide_banner",
-                "-loglevel",
-                "error",
-                "-i",
-                str(source),
-                "-vn",
-                "-codec:a",
-                "pcm_s16le",
-                "-ar",
-                "44100",
-                "-ac",
-                "2",
-                str(output),
-            ]
+            cmd = common + ["-codec:a", "pcm_s16le", "-ar", "44100", "-ac", "2", str(output)]
 
         result = subprocess.run(
             cmd,
@@ -572,7 +563,7 @@ class ConverterApp(tk.Tk):
         )
         if result.returncode != 0:
             err = (result.stderr or result.stdout or "FFmpeg lỗi không xác định").strip()
-            raise RuntimeError(err[-1200:])
+            raise RuntimeError(err[-1000:])
 
     @staticmethod
     def _unique_output(folder: Path, title: str, fmt: str):
