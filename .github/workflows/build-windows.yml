@@ -5,7 +5,8 @@ on:
   push:
     branches: [main]
     paths:
-      - "app_v31.py"
+      - "app_v4.py"
+      - "api_server.py"
       - "requirements.txt"
       - ".github/workflows/build-windows.yml"
 
@@ -34,7 +35,9 @@ jobs:
 
       - name: Validate Python source
         shell: pwsh
-        run: python -m py_compile app_v31.py
+        run: |
+          python -m py_compile api_server.py
+          python -m py_compile app_v4.py
 
       - name: Build EXE
         shell: pwsh
@@ -42,12 +45,16 @@ jobs:
           pyinstaller --noconfirm --clean --onefile --windowed `
             --name SunoAudioConverter `
             --collect-all imageio_ffmpeg `
-            app_v31.py
+            --collect-all fastapi `
+            --collect-all starlette `
+            --collect-all uvicorn `
+            --hidden-import api_server `
+            app_v4.py
 
       - name: Upload Windows app
         uses: actions/upload-artifact@v4
         with:
-          name: SunoAudioConverter-Windows
+          name: SunoAudioConverter-Windows-v4
           path: dist/SunoAudioConverter.exe
           if-no-files-found: error
           retention-days: 30
