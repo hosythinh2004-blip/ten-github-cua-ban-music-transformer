@@ -5,7 +5,7 @@ on:
   push:
     branches: [main]
     paths:
-      - "app_v3.py"
+      - "app_v31.py"
       - "requirements.txt"
       - ".github/workflows/build-windows.yml"
 
@@ -34,7 +34,7 @@ jobs:
 
       - name: Validate Python source
         shell: pwsh
-        run: python -m py_compile app_v3.py
+        run: python -m py_compile app_v31.py
 
       - name: Build EXE
         shell: pwsh
@@ -42,7 +42,7 @@ jobs:
           pyinstaller --noconfirm --clean --onefile --windowed `
             --name SunoAudioConverter `
             --collect-all imageio_ffmpeg `
-            app_v3.py
+            app_v31.py
 
       - name: Upload Windows app
         uses: actions/upload-artifact@v4
