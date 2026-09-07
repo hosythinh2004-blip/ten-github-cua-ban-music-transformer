@@ -1,0 +1,14 @@
+{
+  "name": "suno-audio-converter",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Chuyển đổi audio từ liên kết Suno sang MP3 hoặc WAV",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node --test"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": {}
+}
