@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Chuyển audio từ liên kết Suno sang MP3 hoặc WAV.">
+  <title>SunoFlow — Audio Converter</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="glow glow-one"></div><div class="glow glow-two"></div>
+  <header class="nav">
+    <a class="brand" href="/" aria-label="SunoFlow trang chủ"><span class="brand-mark">S</span><span>SunoFlow</span></a>
+    <span class="secure"><i></i> Chuyển đổi an toàn</span>
+  </header>
+  <main>
+    <section class="hero">
+      <div class="eyebrow"><span>✦</span> SUNO AUDIO CONVERTER</div>
+      <h1>Âm nhạc của bạn.<br><em>Định dạng bạn muốn.</em></h1>
+      <p class="intro">Dán liên kết Suno, chọn định dạng và tải về. Nhanh chóng, đơn giản, không lưu trữ tệp của bạn.</p>
+    </section>
+
+    <section class="converter" aria-labelledby="form-title">
+      <div class="step"><span>01</span><div><h2 id="form-title">Dán liên kết Suno</h2><p>Hỗ trợ liên kết bài hát công khai và tệp audio trực tiếp</p></div></div>
+      <form id="convert-form">
+        <label class="url-field">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.1.1l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1M14 11a5 5 0 0 0-7.1-.1l-2 2A5 5 0 0 0 12 20l1.1-1.1"/></svg>
+          <input id="url" name="url" type="url" required placeholder="https://suno.com/song/..." autocomplete="url">
+          <button type="button" id="paste">Dán</button>
+        </label>
+        <div class="divider"></div>
+        <div class="step compact"><span>02</span><div><h2>Chọn định dạng</h2><p>Chọn chất lượng phù hợp với nhu cầu của bạn</p></div></div>
+        <div class="formats" role="radiogroup" aria-label="Định dạng đầu ra">
+          <label class="format selected"><input type="radio" name="format" value="mp3" checked><span class="file-icon">MP3</span><span><b>MP3</b><small>Nhẹ, tương thích mọi thiết bị</small></span><i>✓</i></label>
+          <label class="format"><input type="radio" name="format" value="wav"><span class="file-icon">WAV</span><span><b>WAV</b><small>Không nén, chất lượng phòng thu</small></span><i>✓</i></label>
+        </div>
+        <button class="submit" type="submit"><span class="button-text">Chuyển đổi ngay</span><span class="arrow">→</span></button>
+        <p id="status" class="status" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+
+    <section class="benefits">
+      <article><span>⚡</span><div><b>Nhanh chóng</b><p>Xử lý và tải về chỉ trong vài giây</p></div></article>
+      <article><span>♢</span><div><b>Riêng tư</b><p>Tệp tự động xoá sau khi chuyển đổi</p></div></article>
+      <article><span>♫</span><div><b>Chất lượng cao</b><p>Giữ trọn chi tiết trong từng giai điệu</p></div></article>
+    </section>
+  </main>
+  <footer>Chỉ tải xuống nội dung bạn sở hữu hoặc được phép sử dụng. <span>·</span> SunoFlow không liên kết với Suno.</footer>
+  <script src="/app.js"></script>
+</body>
+</html>
