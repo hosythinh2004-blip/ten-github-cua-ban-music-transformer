@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "Flow Prompt Pusher",
+  "version": "1.0.0",
+  "description": "Đẩy hàng loạt prompt vào Google Flow/Veo. Một dòng = một prompt. Dùng chính phiên Google đang đăng nhập.",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://flow.google/*",
+    "https://labs.google/fx/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://flow.google/*",
+        "https://labs.google/fx/*"
+      ],
+      "js": ["content.js"],
+      "css": ["styles.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "Flow Prompt Pusher"
+  }
+}
