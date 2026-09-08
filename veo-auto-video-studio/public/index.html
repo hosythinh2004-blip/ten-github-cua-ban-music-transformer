@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VEO AUTO VIDEO STUDIO</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-icon">▶</span><strong>VEO AUTO VIDEO STUDIO</strong><span class="tagline">1 dòng = 1 prompt</span></div>
+    <div id="apiState" class="api-state">Đang kiểm tra API…</div>
+  </header>
+
+  <main class="workspace">
+    <section class="panel editor-panel">
+      <div class="section-head">
+        <div><h1>PASTE PROMPTS</h1><p>Dán nhiều prompt. Mỗi dòng là một video độc lập.</p></div>
+        <span id="detected" class="counter">0 prompts</span>
+      </div>
+      <textarea id="promptInput" placeholder="Hai cô gái đứng hát trong nhà thờ cổ...&#10;Hai cô gái quỳ cầu nguyện bên hồ...&#10;Hai cô gái đi cùng Chúa Jesus trên cánh đồng..."></textarea>
+      <div class="toolbar">
+        <label><input id="ignoreEmpty" type="checkbox" checked> Bỏ qua dòng trống</label>
+        <label><input id="applyRefs" type="checkbox" checked> Dùng ảnh tham chiếu cho tất cả</label>
+        <button id="importBtn" class="primary">IMPORT PROMPTS</button>
+      </div>
+
+      <div class="divider"></div>
+      <div class="section-head compact"><div><h2>REFERENCE CHARACTER</h2><p>Tối đa 3 ảnh, dùng lại cho toàn bộ batch.</p></div></div>
+      <label class="dropzone" for="referenceInput">
+        <input id="referenceInput" type="file" accept="image/png,image/jpeg,image/webp" multiple hidden>
+        <span>＋ Thêm ảnh tham chiếu</span><small>PNG, JPG, WEBP · tối đa 10MB/ảnh</small>
+      </label>
+      <div id="referencePreview" class="reference-preview"></div>
+
+      <div class="divider"></div>
+      <div class="settings-grid">
+        <label>Model<select id="model"><option value="veo-3.1-fast-generate-preview">Veo 3.1 Fast</option><option value="veo-3.1-generate-preview">Veo 3.1 Quality</option></select></label>
+        <label>Tỷ lệ<select id="ratio"><option>16:9</option><option>9:16</option></select></label>
+        <label>Độ phân giải<select id="resolution"><option>720p</option><option>1080p</option><option>4k</option></select></label>
+        <label>Độ dài<select id="duration"><option value="8">8 giây</option><option value="6">6 giây</option><option value="4">4 giây</option></select></label>
+        <label>Chạy song song<select id="concurrency"><option value="1">1 video</option><option value="2">2 video</option><option value="3">3 video</option></select></label>
+      </div>
+      <p class="hint">Khi dùng ảnh tham chiếu hoặc 1080p/4K, tool tự ép thời lượng về 8 giây theo giới hạn Veo.</p>
+    </section>
+
+    <section class="panel queue-panel">
+      <div class="section-head">
+        <div><h2>GENERATION QUEUE</h2><p id="queueSummary">Chưa có prompt</p></div>
+        <button id="clearBtn" class="ghost">Xóa hàng đợi</button>
+      </div>
+      <div id="queue" class="queue empty">Dán prompt bên trái rồi bấm IMPORT PROMPTS.</div>
+      <div class="queue-actions">
+        <button id="generateBtn" class="primary large">▶ GENERATE ALL</button>
+        <button id="pauseBtn" class="ghost">Ⅱ PAUSE</button>
+        <button id="retryBtn" class="ghost">↻ RETRY ERROR</button>
+      </div>
+    </section>
+  </main>
+
+  <template id="jobTemplate">
+    <article class="job-card">
+      <div class="job-index"></div>
+      <div class="job-main"><div class="job-prompt"></div><div class="job-meta"></div></div>
+      <span class="status"></span>
+      <button class="remove" title="Xóa">×</button>
+      <video class="result" controls></video>
+      <div class="error-text"></div>
+    </article>
+  </template>
+  <script src="/app.js" type="module"></script>
+</body>
+</html>
