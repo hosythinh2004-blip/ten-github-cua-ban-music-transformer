@@ -124,5 +124,5 @@ app.delete('/api/jobs/:id', (req, res) => {
   res.status(204).end();
 });
 
-app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+app.use((req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 app.listen(port, () => console.log(`VEO AUTO VIDEO STUDIO: http://localhost:${port}`));
