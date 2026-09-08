@@ -5,6 +5,10 @@ on:
     paths:
       - 'veo-auto-video-studio-portable/**'
       - '.github/workflows/build-veo-portable.yml'
+  pull_request:
+    paths:
+      - 'veo-auto-video-studio-portable/**'
+      - '.github/workflows/build-veo-portable.yml'
   workflow_dispatch:
 
 jobs:
