@@ -11,6 +11,9 @@ on:
       - '.github/workflows/build-veo-portable.yml'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build-windows:
     runs-on: windows-latest
@@ -41,12 +44,24 @@ jobs:
         run: |
           Compress-Archive -Path 'dist\VEO-Auto-Video-Studio.exe' -DestinationPath 'dist\VEO-Auto-Video-Studio-Windows-x64.zip' -Force
 
-      - name: Upload portable app
-        uses: actions/upload-artifact@v4
-        with:
-          name: VEO-Auto-Video-Studio-Windows-x64
-          path: |
-            veo-auto-video-studio-portable/dist/VEO-Auto-Video-Studio.exe
-            veo-auto-video-studio-portable/dist/VEO-Auto-Video-Studio-Windows-x64.zip
-          if-no-files-found: error
-          retention-days: 30
+      - name: Publish GitHub Release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = 'veo-auto-video-studio-v1.1.0'
+          $zip = 'dist\VEO-Auto-Video-Studio-Windows-x64.zip'
+          $exe = 'dist\VEO-Auto-Video-Studio.exe'
+          gh release view $tag *> $null
+          if ($LASTEXITCODE -eq 0) {
+            gh release upload $tag $zip $exe --clobber
+          } else {
+            gh release create $tag $zip $exe --title 'VEO AUTO VIDEO STUDIO v1.1.0' --notes 'Windows x64 portable build. Download ZIP, extract, then run VEO-Auto-Video-Studio.exe. No Node or Python installation required.'
+          }
+
+      - name: Verify build files
+        shell: pwsh
+        run: |
+          Get-Item 'dist\VEO-Auto-Video-Studio.exe'
+          Get-Item 'dist\VEO-Auto-Video-Studio-Windows-x64.zip'
