@@ -1,0 +1,19 @@
+{
+  "name": "veo-auto-video-studio-portable",
+  "version": "1.1.0",
+  "private": true,
+  "type": "module",
+  "bin": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "check": "node --check server.js && node --check public/app.js",
+    "build:win": "pkg . --targets node20-win-x64 --output dist/VEO-Auto-Video-Studio.exe"
+  },
+  "pkg": {
+    "assets": ["public/**/*"],
+    "outputPath": "dist"
+  },
+  "devDependencies": {
+    "@yao-pkg/pkg": "^6.5.1"
+  }
+}
